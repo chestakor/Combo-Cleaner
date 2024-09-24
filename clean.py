@@ -1,52 +1,51 @@
-import re
+import os
 
 def process_file(file_path):
+    total_lines = 0
+    duplicate_lines = 0
+    combo_type = ""
+    combos = set()
+
     with open(file_path, 'r') as file:
-        lines = file.readlines()
+        for line in file:
+            total_lines += 1
+            # Determine the combo type based on line content
+            if ":" in line:
+                if "@" in line.split(":")[0]:  # Email:Pass format
+                    combo_type = "Email:Pass"
+                    combos.add(line.strip())
+                elif any(char.isdigit() for char in line.split(":")[0]):  # CC format
+                    combo_type = "CC"
+                    combos.add(line.strip())
     
-    combo_type = "Email:Pass" if "@" in lines[0] else "CC"
-    unique_lines = set(lines)
-    total_lines = len(lines)
-    duplicate_lines = total_lines - len(unique_lines)
-    
+    duplicate_lines = total_lines - len(combos)
+    with open(file_path, 'w') as file:
+        for combo in combos:
+            file.write(combo + "\n")
+
     return total_lines, duplicate_lines, combo_type
 
 def remove_duplicates(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
     
-    unique_lines = set()
-    cleaned_lines = []
-    
-    for line in lines:
-        if "@" in line or re.match(r"^\d{16}\|\d{2}\|\d{2}\|\d{3}$", line.strip()):
-            if line not in unique_lines:
-                cleaned_lines.append(line)
-                unique_lines.add(line)
-    
-    cleaned_file_path = f"{len(cleaned_lines)}_cleaned.txt"
+    unique_lines = set(lines)
+    cleaned_file_path = file_path.replace('.txt', '_cleaned.txt')
     
     with open(cleaned_file_path, 'w') as cleaned_file:
-        cleaned_file.writelines(cleaned_lines)
+        cleaned_file.writelines(unique_lines)
     
-    return cleaned_file_path, len(cleaned_lines)
+    return cleaned_file_path, len(unique_lines)
 
 def clean_specific_lines(file_path, first_line, last_line):
     with open(file_path, 'r') as file:
         lines = file.readlines()
     
-    unique_lines = set()
-    cleaned_lines = []
-    
-    for i, line in enumerate(lines[first_line-1:last_line]):
-        if "@" in line or re.match(r"^\d{16}\|\d{2}\|\d{2}\|\d{3}$", line.strip()):
-            if line not in unique_lines:
-                cleaned_lines.append(line)
-                unique_lines.add(line)
-    
-    cleaned_file_path = f"{len(cleaned_lines)}_cleaned.txt"
+    specific_lines = lines[first_line - 1:last_line]  # Adjust for 0-based index
+    unique_specific_lines = set(specific_lines)
+    cleaned_file_path = file_path.replace('.txt', '_custom_cleaned.txt')
     
     with open(cleaned_file_path, 'w') as cleaned_file:
-        cleaned_file.writelines(cleaned_lines)
+        cleaned_file.writelines(unique_specific_lines)
     
-    return cleaned_file_path, len(cleaned_lines)
+    return cleaned_file_path, len(unique_specific_lines)
