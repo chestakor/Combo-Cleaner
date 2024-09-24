@@ -2,23 +2,23 @@ import os
 
 def process_file(file_path):
     total_lines = 0
-    duplicate_lines = 0
-    combo_type = ""
     combos = set()
+    combo_type = ""
 
     with open(file_path, 'r') as file:
         for line in file:
             total_lines += 1
+            line = line.strip()
             # Determine the combo type based on line content
             if ":" in line:
                 if "@" in line.split(":")[0]:  # Email:Pass format
                     combo_type = "Email:Pass"
-                    combos.add(line.strip())
-                elif any(char.isdigit() for char in line.split(":")[0]):  # CC format
-                    combo_type = "CC"
-                    combos.add(line.strip())
+                    combos.add(line)
+            elif "|" in line:
+                combo_type = "CC"
+                combos.add(line)  # Treat all CC lines as unique, use set to avoid duplicates
     
-    duplicate_lines = total_lines - len(combos)
+    duplicate_lines = total_lines - len(combos)  # Only consider unique combos
     with open(file_path, 'w') as file:
         for combo in combos:
             file.write(combo + "\n")
