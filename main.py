@@ -5,7 +5,7 @@ from clean import process_file, remove_duplicates, clean_specific_lines
 from keep_alive import keep_alive
 
 # Replace with your bot token and admin ID
-TOKEN = '7386294555:AAHoRvYVyrJ-9JCvGXOWstrYejx2tOLtVgo'
+TOKEN = 'YOUR_BOT_TOKEN_HERE'
 ADMIN_ID = 5429071679
 
 bot = telebot.TeleBot(TOKEN)
@@ -24,11 +24,11 @@ def start(message):
 # /help command
 @bot.message_handler(commands=['help'])
 def help_command(message):
-    bot.reply_to(message, "Use /combo command by replying to a .txt file to clean your combos.")
+    bot.reply_to(message, "Use /clean command by replying to a .txt file to clean your combos.")
 
-# Admin-only /combo command
-@bot.message_handler(commands=['combo'])
-def combo(message):
+# Admin-only /clean command
+@bot.message_handler(commands=['clean'])
+def clean_command(message):
     if is_admin(message.from_user.id):
         if message.reply_to_message and message.reply_to_message.document:
             file_info = bot.get_file(message.reply_to_message.document.file_id)
@@ -44,13 +44,13 @@ def combo(message):
             
             # Send initial message
             markup = InlineKeyboardMarkup()
-            start_button = InlineKeyboardButton(text="START", callback_data=f"start")
-            customize_button = InlineKeyboardButton(text="Customize", callback_data=f"customize")
+            start_button = InlineKeyboardButton(text="START", callback_data="start")
+            customize_button = InlineKeyboardButton(text="Customize", callback_data="customize")
             markup.add(customize_button, start_button)
             
             bot.reply_to(message, f"{combo_type} found ✅\n━━━━━━━━━━━━━━━━\nType: {combo_type}\nTotal: {total_lines}\nDuplicates: {duplicate_lines}\n━━━━━━━━━━━━━━━━\nBot By: Aftab👑", reply_markup=markup)
         else:
-            bot.reply_to(message, "Please reply to a .txt file with the /combo command.")
+            bot.reply_to(message, "Please reply to a .txt file with the /clean command.")
     else:
         bot.reply_to(message, "You are not authorized to use this command.")
 
