@@ -39,10 +39,13 @@ def combo(message):
             
             total_lines, duplicate_lines, combo_type = process_file(file_path)
             
+            # Store file path in user_data instead of passing it in callback data
+            user_data[message.from_user.id] = {"file_path": file_path}
+            
             # Send initial message
             markup = InlineKeyboardMarkup()
-            start_button = InlineKeyboardButton(text="START", callback_data=f"start_{file_path}")
-            customize_button = InlineKeyboardButton(text="Customize", callback_data=f"customize_{file_path}")
+            start_button = InlineKeyboardButton(text="START", callback_data=f"start")
+            customize_button = InlineKeyboardButton(text="Customize", callback_data=f"customize")
             markup.add(customize_button, start_button)
             
             bot.reply_to(message, f"{combo_type} found ✅\n━━━━━━━━━━━━━━━━\nType: {combo_type}\nTotal: {total_lines}\nDuplicates: {duplicate_lines}\n━━━━━━━━━━━━━━━━\nBot By: Aftab👑", reply_markup=markup)
@@ -54,37 +57,51 @@ def combo(message):
 # Handle button callbacks
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
-    action, file_path = call.data.split('_', 1)
+    user_id = call.from_user.id
+    if user_id not in user_data:
+        bot.send_message(call.message.chat.id, "Session expired. Please try again.")
+        return
     
-    if action == "start":
+    file_path = user_data[user_id]['file_path']
+    
+    if call.data == "start":
         bot.send_message(call.message.chat.id, "Your combo is being processed sir\nPlease wait")
         cleaned_file_path, total_lines = remove_duplicates(file_path)
         with open(cleaned_file_path, 'rb') as new_file:
             bot.send_document(call.message.chat.id, new_file, caption=f"Cleaned Combos✅\n_____________________\nType: Email:Pass\nTotal: {total_lines}\n_____________________\nReq by: {call.from_user.username}\nBot by: Aftab👑")
         os.remove(cleaned_file_path)
     
-    elif action == "customize":
-        user_data[call.from_user.id] = {"file_path": file_path}
+    elif call.data == "customize":
         bot.send_message(call.message.chat.id, "Enter first line:")
+        user_data[user_id]['awaiting_first_line'] = True
 
 # Handle customization input
 @bot.message_handler(func=lambda message: message.from_user.id in user_data)
 def handle_customization(message):
-    user_input = message.text
-    if 'first_line' not in user_data[message.from_user.id]:
-        user_data[message.from_user.id]['first_line'] = int(user_input)
-        bot.send_message(message.chat.id, "Enter last line:")
-    else:
-        last_line = int(user_input)
-        first_line = user_data[message.from_user.id]['first_line']
-        file_path = user_data[message.from_user.id]['file_path']
-        
-        cleaned_file_path, total_lines = clean_specific_lines(file_path, first_line, last_line)
-        with open(cleaned_file_path, 'rb') as new_file:
-            bot.send_document(message.chat.id, new_file, caption=f"Cleaned Combos✅\n_____________________\nType: Email:Pass\nTotal: {total_lines}\nRange: {first_line}-{last_line}\n_____________________\nReq by: {message.from_user.username}\nBot by: Aftab👑")
-        
-        os.remove(cleaned_file_path)
-        del user_data[message.from_user.id]
+    user_id = message.from_user.id
+    if 'awaiting_first_line' in user_data[user_id]:
+        try:
+            first_line = int(message.text)
+            user_data[user_id]['first_line'] = first_line
+            bot.send_message(message.chat.id, "Enter last line:")
+            del user_data[user_id]['awaiting_first_line']
+            user_data[user_id]['awaiting_last_line'] = True
+        except ValueError:
+            bot.send_message(message.chat.id, "Please enter a valid number.")
+    elif 'awaiting_last_line' in user_data[user_id]:
+        try:
+            last_line = int(message.text)
+            first_line = user_data[user_id]['first_line']
+            file_path = user_data[user_id]['file_path']
+            
+            cleaned_file_path, total_lines = clean_specific_lines(file_path, first_line, last_line)
+            with open(cleaned_file_path, 'rb') as new_file:
+                bot.send_document(message.chat.id, new_file, caption=f"Cleaned Combos✅\n_____________________\nType: Email:Pass\nTotal: {total_lines}\nRange: {first_line}-{last_line}\n_____________________\nReq by: {message.from_user.username}\nBot by: Aftab👑")
+            
+            os.remove(cleaned_file_path)
+            del user_data[user_id]
+        except ValueError:
+            bot.send_message(message.chat.id, "Please enter a valid number.")
 
 if __name__ == "__main__":
     keep_alive()
