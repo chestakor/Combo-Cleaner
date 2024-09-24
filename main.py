@@ -5,7 +5,7 @@ from clean import process_file, remove_duplicates, clean_specific_lines
 from keep_alive import keep_alive
 
 # Replace with your bot token and admin ID
-TOKEN = 'YOUR_BOT_TOKEN_HERE'
+TOKEN = '7386294555:AAHoRvYVyrJ-9JCvGXOWstrYejx2tOLtVgo'
 ADMIN_ID = 5429071679
 
 bot = telebot.TeleBot(TOKEN)
